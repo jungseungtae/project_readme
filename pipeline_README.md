@@ -99,15 +99,14 @@ python scripts/run_monthly_migration.py --year 2024
 SARIMA(전체 매장) + Ridge 회귀(개별 매장) 모델로
 당일 매출·주문수·재고 수요를 예측합니다.
 
-### 일별 실행
+### 일별 실행 (Airflow DockerOperator)
+
+Airflow `daily_pipeline` DAG에서 자동 실행됩니다 (KST 08:40).  
+Airflow가 `--date {{ ds }}` 인수를 컨테이너에 주입하여 날짜를 전달합니다.
 
 ```
-[1] sales_feature_upload.py  → 학습 피처 데이터 적재
-[2] pred_runner.py            → 예측 모델 학습 및 결과 저장
-```
-
-```bat
-run_daily.bat
+[1] sales_feature_upload.py --date {{ ds }}  → 학습 피처 데이터 적재
+[2] pred_runner.py                            → 예측 모델 학습 및 결과 저장
 ```
 
 ### 예측 모델 구성
@@ -160,7 +159,7 @@ DOUGH_LOOKBACK_DAYS  = 90
 - **Parquet 포맷**: 컬럼형 저장으로 Athena 스캔 비용 최소화
 - **날짜 파티셔닝**: year / month / day 기준 Fact 테이블 파티셔닝
 - **멱등성**: 파티션 삭제 후 재적재로 중복 방지
-- **자동화**: Oracle Job · BAT · Shell 스크립트 조합으로 무인 운영
+- **자동화**: Airflow DockerOperator 기반 무인 운영
 - **일 평균 처리량**: 약 6만 건
 
 ---
@@ -177,10 +176,10 @@ cp config/config.yaml.example config/config.yaml
 
 ### 필수 요건
 
-- Python 3.8+
+- Python 3.10+ (Docker 컨테이너 기반 실행)
 - Oracle DB 접근 권한
 - AWS CLI 설정 완료 (`aws configure`)
-- oracledb thin mode (Oracle Client 설치 불필요)
+- Oracle Instant Client 11.2 (Docker 이미지에 내장)
 
 ---
 
